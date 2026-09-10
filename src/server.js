@@ -3,21 +3,24 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-// Carrega as variáveis do arquivo .env
+import authRoutes from './routes/authRoutes.js';
+import recipeRoutes from './routes/recipeRoutes.js';
+
 dotenv.config();
 
 const app = express();
 
-// Middlewares
 app.use(cors());
-app.use(express.json()); // Permite que a API receba JSON no corpo das requisições
+app.use(express.json());
 
-// Rota de teste
+app.use('/api/auth', authRoutes);
+app.use('/api/recipes', recipeRoutes);
+
+// teste
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'API PraTudo rodando com sucesso!' });
 });
 
-// Conexão com o MongoDB e Inicialização do Servidor
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
