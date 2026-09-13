@@ -1,3 +1,4 @@
+//recipeController
 import Recipe from '../models/Recipe.js';
 
 // 1. Listar todas as receitas (público)

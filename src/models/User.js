@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     lastName: {
-      type: String,      
+      type: String,
       trim: true,
       default: true
     },
@@ -25,8 +25,8 @@ const userSchema = new mongoose.Schema(
       select: false, // Evita que a senha seja retornada em buscas por padrão
     },
     birthDate: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null
     },
     role: {
       type: String,
@@ -38,6 +38,12 @@ const userSchema = new mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Recipe',
+      },
+    ],
   },
   {
     timestamps: true, // Cria automaticamente os campos createdAt e updatedAt

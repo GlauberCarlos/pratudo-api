@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import recipeRoutes from './routes/recipeRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-
+import router from './routes/favoriteRoutes.js'; 
 dotenv.config();
 
 const app = express();
@@ -18,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', router); 
 
 // teste inicio
 app.get('/api/health', (req, res) => {

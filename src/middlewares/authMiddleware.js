@@ -28,3 +28,4 @@ export const protect = (req, res, next) => {
     return res.status(401).json({ message: 'Não autorizado, nenhum token fornecido.' });
   }
 };
+
