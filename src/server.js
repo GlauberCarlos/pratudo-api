@@ -1,3 +1,4 @@
+// server
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -18,7 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/admin', adminRoutes);
 
-// teste
+// teste inicio
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'API PraTudo rodando com sucesso!' });
 });

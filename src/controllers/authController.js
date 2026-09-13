@@ -2,22 +2,21 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// 1. Registro de Usuário
+import Recipe from '../models/Recipe.js';
+
 export const register = async (req, res) => {
   try {
-    const { name, lastName, email, password, birthDate, requestAdmin } = req.body;
+    const { name, lastName, email, password, birthDate, role } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'Este e-mail já está cadastrado.' });
     }
 
-    // Criptografar a senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Definir papel (Role) inicial
-    const role = requestAdmin ? 'admin_pending' : 'user';
+    const UserRole = role === 'admin_pending' ? 'admin_pending' : 'user';
 
     const newUser = await User.create({
       name,
@@ -25,7 +24,8 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       birthDate,
-      role,
+      status: 'active',
+      role: UserRole,
     });
 
     return res.status(201).json({
@@ -65,7 +65,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'E-mail ou senha incorretos.' });
     }
 
-    // Gerar Token JWT
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'secret_fallback',
@@ -87,5 +86,59 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao realizar login', error: error.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    const { name, lastName, email, password } = req.body;
+
+    user.name = name || user.name;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+
+    // Se informou uma nova senha, gera o hash
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      id: updatedUser._id,
+      name: updatedUser.name,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      status: updatedUser.status,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao atualizar perfil.', error: error.message });
+  }
+};
+
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Remove as receitas associadas
+    await Recipe.deleteMany({ author: userId });
+
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    return res.status(200).json({ message: 'Conta e dados associados excluídos com sucesso.' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao excluir conta.', error: error.message });
   }
 };

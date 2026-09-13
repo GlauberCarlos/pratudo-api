@@ -1,9 +1,11 @@
+// adminRoutes
 import { Router } from 'express';
 
 import {
   getAllUsers,
   approveAdmin,
   toggleUserStatus,
+  deleteUserByAdmin
 } from '../controllers/adminController.js';
 
 import { protect } from '../middlewares/authMiddleware.js';
@@ -17,5 +19,6 @@ router.use(protect, isAdmin);
 router.get('/users', getAllUsers);
 router.patch('/users/:userId/approve-admin', approveAdmin);
 router.patch('/users/:userId/toggle-status', toggleUserStatus);
+router.delete('/users/:userId', deleteUserByAdmin);
 
 export default router;
