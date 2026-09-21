@@ -1,16 +1,12 @@
 //recipeController
 import Recipe from '../models/Recipe.js';
 
-// 1. Listar todas as receitas (público)
-// Listar receitas com suporte a Busca Multi-campos e Filtros
 export const getAllRecipes = async (req, res) => {
   try {
     const { search, category, isVegan, isVegetarian, isGlutenFree, isLactoseFree } = req.query;
 
-    // Condição base: sempre trazer receitas públicas
     let query = { isPublic: true };
 
-    // 1. Busca por texto em múltiplos campos (Título, Descrição, Categoria, Ingredientes)
     if (search) {
       const searchRegex = new RegExp(search, 'i'); // 'i' para ignorar maiúsculas/minúsculas
       query.$or = [
@@ -21,18 +17,15 @@ export const getAllRecipes = async (req, res) => {
       ];
     }
 
-    // 2. Filtro por Categoria exata (se informada)
     if (category) {
       query.category = category;
     }
 
-    // 3. Filtros Booleanos de Restrições Alimentares
     if (isVegan === 'true') query.isVegan = true;
     if (isVegetarian === 'true') query.isVegetarian = true;
     if (isGlutenFree === 'true') query.isGlutenFree = true;
     if (isLactoseFree === 'true') query.isLactoseFree = true;
 
-    // Executa a busca no banco com os filtros montados
     const recipes = await Recipe.find(query).populate('author', 'name lastName email');
 
     return res.status(200).json(recipes);
@@ -41,7 +34,6 @@ export const getAllRecipes = async (req, res) => {
   }
 };
 
-// 2. Buscar receita por ID (público)
 export const getRecipeById = async (req, res) => {
     try {
         const recipe = await Recipe.findById(req.params.id).populate('author', 'name lastName email');
@@ -54,7 +46,6 @@ export const getRecipeById = async (req, res) => {
     }
 };
 
-// 3. Criar nova receita (protegido - usuário logado)
 export const createRecipe = async (req, res) => {
     try {
         const
@@ -102,7 +93,6 @@ export const createRecipe = async (req, res) => {
     }
 };
 
-// 4. Deletar receita (protegido)
 export const deleteRecipe = async (req, res) => {
     try {
         const recipe = await Recipe.findById(req.params.id);
@@ -111,7 +101,6 @@ export const deleteRecipe = async (req, res) => {
             return res.status(404).json({ message: 'Receita não encontrada.' });
         }
 
-        // Permite deletar se for o autor ou se for admin
         if (recipe.author.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Ação não permitida.' });
         }
@@ -123,10 +112,8 @@ export const deleteRecipe = async (req, res) => {
     }
 };
 
-// 5. Buscar receitas criadas pelo usuário logado
 export const getMyRecipes = async (req, res) => {
     try {
-        // req.user.id vem do token no authMiddleware
         const recipes = await Recipe.find({ author: req.user.id }).populate('author', 'name lastName email');
         return res.status(200).json(recipes);
     } catch (error) {
@@ -134,7 +121,6 @@ export const getMyRecipes = async (req, res) => {
     }
 };
 
-// 6. Atualizar receita existente
 export const updateRecipe = async (req, res) => {
     try {
         const id = req.params.id;
@@ -144,12 +130,10 @@ export const updateRecipe = async (req, res) => {
             return res.status(404).json({ message: 'Receita não encontrada.' });
         }
 
-        // Permite editar apenas se for o autor ou se for um admin
         if (recipe.author.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Ação não permitida.' });
         }
 
-        // Atualiza com os campos enviados na requisição
         const updatedRecipe = await Recipe.findByIdAndUpdate(
             id,
             { $set: req.body },

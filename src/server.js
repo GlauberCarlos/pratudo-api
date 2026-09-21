@@ -8,6 +8,10 @@ import authRoutes from './routes/authRoutes.js';
 import recipeRoutes from './routes/recipeRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import router from './routes/favoriteRoutes.js'; 
+import ratingRoutes from './routes/ratingRoutes.js';
+import commentRoutes from './routes/commentRoutes.js';
+import mealPlanRoutes from './routes/mealPlanRoutes.js'
+
 dotenv.config();
 
 const app = express();
@@ -19,6 +23,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', router); 
+app.use('/api/ratings', ratingRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/menu', mealPlanRoutes);
 
 // teste inicio
 app.get('/api/health', (req, res) => {
