@@ -73,6 +73,7 @@ export const updateComment = async (req, res) => {
     return res.status(500).json({ message: 'Erro ao editar comentário.', error: error.message });
   }
 };
+
 export const deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,5 +93,26 @@ export const deleteComment = async (req, res) => {
     return res.status(200).json({ message: 'Comentário removido com sucesso.' });
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao remover comentário.', error: error.message });
+  }
+};
+
+export const getMyComments = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Utilizador não autenticado.' });
+    }
+
+    const comments = await Comment.find({ user: userId })
+      .populate('recipe', 'title img')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(comments);
+  } catch (error) {
+    return res.status(500).json({ 
+      message: 'Erro ao buscar comentários do utilizador.', 
+      error: error.message 
+    });
   }
 };

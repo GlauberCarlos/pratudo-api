@@ -2,36 +2,36 @@
 import Recipe from '../models/Recipe.js';
 
 export const getAllRecipes = async (req, res) => {
-  try {
-    const { search, category, isVegan, isVegetarian, isGlutenFree, isLactoseFree } = req.query;
+    try {
+        const { search, category, isVegan, isVegetarian, isGlutenFree, isLactoseFree } = req.query;
 
-    let query = { isPublic: true };
+        let query = { isPublic: true };
 
-    if (search) {
-      const searchRegex = new RegExp(search, 'i'); // 'i' para ignorar maiúsculas/minúsculas
-      query.$or = [
-        { title: searchRegex },
-        { description: searchRegex },
-        { category: searchRegex },
-        { ingredients: searchRegex },
-      ];
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex },
+                { ingredients: searchRegex },
+            ];
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+        if (isVegan === 'true') query.isVegan = true;
+        if (isVegetarian === 'true') query.isVegetarian = true;
+        if (isGlutenFree === 'true') query.isGlutenFree = true;
+        if (isLactoseFree === 'true') query.isLactoseFree = true;
+
+        const recipes = await Recipe.find(query).populate('author', 'name lastName email');
+
+        return res.status(200).json(recipes);
+    } catch (error) {
+        return res.status(500).json({ message: 'Erro ao buscar receitas', error: error.message });
     }
-
-    if (category) {
-      query.category = category;
-    }
-
-    if (isVegan === 'true') query.isVegan = true;
-    if (isVegetarian === 'true') query.isVegetarian = true;
-    if (isGlutenFree === 'true') query.isGlutenFree = true;
-    if (isLactoseFree === 'true') query.isLactoseFree = true;
-
-    const recipes = await Recipe.find(query).populate('author', 'name lastName email');
-
-    return res.status(200).json(recipes);
-  } catch (error) {
-    return res.status(500).json({ message: 'Erro ao buscar receitas', error: error.message });
-  }
 };
 
 export const getRecipeById = async (req, res) => {
@@ -48,23 +48,22 @@ export const getRecipeById = async (req, res) => {
 
 export const createRecipe = async (req, res) => {
     try {
-        const
-            {
-                title,
-                description,
-                category,
-                prepTime,
-                servings,
-                img,
-                ingredients,
-                instructions,
-                restrictions,
-                isPublic,
-                isVegetarian,
-                isVegan,
-                isLactoseFree,
-                isGlutenFree,
-            } = req.body;
+        const {
+            title,
+            description,
+            category,
+            prepTime,
+            servings,
+            img,
+            ingredients,
+            instructions,
+            restrictions,
+            isPublic,
+            isVegetarian,
+            isVegan,
+            isLactoseFree,
+            isGlutenFree,
+        } = req.body;
 
         const newRecipe = await Recipe.create({
             title,
@@ -81,7 +80,7 @@ export const createRecipe = async (req, res) => {
             isVegan,
             isLactoseFree,
             isGlutenFree,
-            author: req.user.id, // Veio do token no authMiddleware
+            author: req.user.id || req.user._id,
         });
 
         return res.status(201).json({
@@ -95,26 +94,55 @@ export const createRecipe = async (req, res) => {
 
 export const deleteRecipe = async (req, res) => {
     try {
+        const { id } = req.params;
         const recipe = await Recipe.findById(req.params.id);
 
         if (!recipe) {
             return res.status(404).json({ message: 'Receita não encontrada.' });
         }
 
-        if (recipe.author.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ message: 'Ação não permitida.' });
+        const isOwner = String(recipe.author || recipe.userId) === String(req.user.id || req.user._id);
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ message: 'Não tem permissão para eliminar esta receita.' });
         }
 
-        await recipe.deleteOne();
+        await Recipe.findByIdAndDelete(id);
         return res.status(200).json({ message: 'Receita removida' });
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao deletar receita', error: error.message });
     }
 };
 
+// 5. Buscar receitas do próprio utilizador (com suporte a filtros)
 export const getMyRecipes = async (req, res) => {
     try {
-        const recipes = await Recipe.find({ author: req.user.id }).populate('author', 'name lastName email');
+        const { search, category, isVegan, isVegetarian, isGlutenFree, isLactoseFree } = req.query;
+        const userId = req.user.id || req.user._id;
+
+        let query = { author: userId };
+
+        if (search) {
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex },
+                { ingredients: searchRegex },
+            ];
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+        if (isVegan === 'true') query.isVegan = true;
+        if (isVegetarian === 'true') query.isVegetarian = true;
+        if (isGlutenFree === 'true') query.isGlutenFree = true;
+        if (isLactoseFree === 'true') query.isLactoseFree = true;
+
+        const recipes = await Recipe.find(query).populate('author', 'name lastName email');
         return res.status(200).json(recipes);
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao buscar suas receitas', error: error.message });
@@ -130,14 +158,16 @@ export const updateRecipe = async (req, res) => {
             return res.status(404).json({ message: 'Receita não encontrada.' });
         }
 
-        if (recipe.author.toString() !== req.user.id && req.user.role !== 'admin') {
+        const userId = req.user.id || req.user._id;
+
+        if (recipe.author.toString() !== String(userId) && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Ação não permitida.' });
         }
 
         const updatedRecipe = await Recipe.findByIdAndUpdate(
             id,
             { $set: req.body },
-            { new: true, runValidators: true } // validators serve para obedecer as regras do schema
+            { new: true, runValidators: true }
         );
 
         return res.status(200).json({

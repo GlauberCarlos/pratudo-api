@@ -49,3 +49,32 @@ export const deleteUserByAdmin = async (req, res) => {
     res.status(500).json({ message: 'Erro ao excluir usuário.' });
   }
 };
+
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'Utilizador não encontrado' });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao procurar utilizador' });
+  }
+};
+
+export const updateUserByAdmin = async (req, res) => {
+  try {
+    const { name, lastName, email, role } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) return res.status(404).json({ message: 'Utilizador não encontrado' });
+
+    user.name = name || user.name;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+    if (role) user.role = role;
+
+    await user.save();
+    res.json({ message: 'Utilizador atualizado com sucesso', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao atualizar utilizador' });
+  }
+};

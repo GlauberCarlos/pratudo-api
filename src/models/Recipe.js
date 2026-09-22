@@ -1,5 +1,8 @@
 // recipe model
 import mongoose from 'mongoose';
+import Comment from './Comment.js';
+import Rating from './Rating.js';
+import User from './User.js';
 
 const recipeSchema = new mongoose.Schema(
     {
@@ -66,5 +69,26 @@ const recipeSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+recipeSchema.pre('findOneAndDelete', async function (next) {
+  try {
+    const recipeToDelete = await this.model.findOne(this.getQuery());
+
+    if (recipeToDelete) {
+      const recipeId = recipeToDelete._id;
+
+      await Comment.deleteMany({ recipe: recipeId });
+      await Rating.deleteMany({ recipe: recipeId });
+      await User.updateMany(
+        { favorites: recipeId },
+        { $pull: { favorites: recipeId } }
+      );
+    }
+
+  } catch (error) {
+    console.error('Erro no hook pre-delete da Recipe:', error);
+    next(error);
+  }
+});
 
 export default mongoose.model('Recipe', recipeSchema);

@@ -15,8 +15,11 @@ const router = Router();
 
 // Rotas Públicas
 router.get('/', getAllRecipes);
-// Rotas Protegidas (Exigem Login)
-router.get('/user/me', protect, getMyRecipes); 
+
+// Rotas Protegidas
+router.get('/my-recipes', protect, getMyRecipes); 
+
+// Rotas com Parâmetro 
 router.get('/:id', getRecipeById);
 router.post('/', protect, createRecipe);
 router.put('/:id', protect, updateRecipe);

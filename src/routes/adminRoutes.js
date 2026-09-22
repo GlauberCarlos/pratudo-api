@@ -5,7 +5,9 @@ import {
   getAllUsers,
   approveAdmin,
   toggleUserStatus,
-  deleteUserByAdmin
+  deleteUserByAdmin,
+  getUserById,
+  updateUserByAdmin
 } from '../controllers/adminController.js';
 
 import { protect } from '../middlewares/authMiddleware.js';
@@ -16,6 +18,8 @@ const router = Router();
 // Aplica autenticação e verificação de admin para todas as rotas deste arquivo
 router.use(protect, isAdmin);
 
+router.get('/users/:id', getUserById);
+router.put('/users/:id', updateUserByAdmin);
 router.get('/users', getAllUsers);
 router.patch('/users/:userId/approve-admin', approveAdmin);
 router.patch('/users/:userId/toggle-status', toggleUserStatus);
