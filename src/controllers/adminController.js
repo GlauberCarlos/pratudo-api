@@ -1,5 +1,6 @@
 // adminController
 import User from '../models/User.js';
+import { validateUserData } from './authController.js';
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -62,19 +63,39 @@ export const getUserById = async (req, res) => {
 
 export const updateUserByAdmin = async (req, res) => {
   try {
-    const { name, lastName, email, role } = req.body;
+    const { name, lastName, birthDate, role } = req.body;
     const user = await User.findById(req.params.id);
 
-    if (!user) return res.status(404).json({ message: 'Utilizador não encontrado' });
+    if (!user) {
+      return res.status(404).json({ message: 'Utilizador não encontrado' });
+    }
+
+    const validationError = validateUserData({ 
+      name, 
+      lastName, 
+      birthDate, 
+      isUpdate: true 
+    });
+
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     user.name = name || user.name;
     user.lastName = lastName || user.lastName;
-    user.email = email || user.email;
+    user.birthDate = birthDate || user.birthDate;
     if (role) user.role = role;
 
     await user.save();
-    res.json({ message: 'Utilizador atualizado com sucesso', user });
+
+    return res.json({ 
+      message: 'Utilizador atualizado com sucesso', 
+      user 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao atualizar utilizador' });
+    return res.status(500).json({ 
+      message: 'Erro ao atualizar utilizador', 
+      error: error.message 
+    });
   }
 };
